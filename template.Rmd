@@ -1,0 +1,30 @@
+---
+title: "template"
+author: "Byron"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(leaflet)
+```
+
+# Data
+
+```{r}
+
+```
+
+# Map
+
+```{r}
+
+```
