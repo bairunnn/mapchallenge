@@ -1,0 +1,84 @@
+---
+title: "day-2"
+author: "Byron"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(extrafont)
+
+# font_import()  # This may take some time
+# loadfonts()
+
+```
+
+# Data
+
+```{r}
+buses <- st_read("./Data/longbuses.geojson")
+sg <- st_read("./Data/mp2019regions.geojson")
+
+```
+
+# Map
+
+```{r}
+bus_colors <- c("#30362F", "#625834", "#A59132", "#5C9EAD", "#DA7422")
+
+buses$number <- factor(buses$number, levels = c("858", "966", "518", "502", "53"))  
+
+plot1 <- ggplot() +
+  geom_sf(data = sg, fill = "#f9f2e7", color = "white", size = 5) +
+  geom_sf(data = buses, aes(color = number), size = 1.5) +  
+  scale_color_manual(values = bus_colors, guide = "none") + 
+  geom_sf_label(data = buses, aes(label = number, color = number),
+                fontface = "bold", family = "Lato", size = 3, fill = "white", 
+                label.padding = unit(0.15, "lines"), label.size = 0, vjust = -0.5) +  
+  theme_minimal(base_family = "Lato") + 
+  labs(
+    title = '5 longest bus routes in Singapore',
+    subtitle = "Services 53, 502, 518, 858, 966\n(All looping services)"
+  ) +
+  annotate(
+    "text", x = 104.052232, y = 1.2,
+    label = "30DayMapChallenge\nDay #2\nLengthy Lines\nByron",
+    color = "#7f8181", size = 3, hjust = 1, vjust = 1,
+    family = "Lato"
+  ) +
+  annotate(
+    "text", x = 103.609410, y = 1.192789,
+    label = "858: 73 km\n966: 63 km\n518: 61 km\n502: 55 km\n53: 53 km",
+    color = "#7f8181", size = 2, hjust = 0, vjust = 1,
+    family = "Lato"
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lato Black"), 
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_blank()
+  )
+
+plot1
+```
+
+```{r}
+# ggsave("day1_condominiums.png", plot = plot1, width = 10, height = 8, dpi = 600)
+
+png("02-Byron-Lines.png", width = 3200, height = 2100, res = 300)
+
+# Print the plot to the device
+print(plot1)
+
+# Close the device
+dev.off()
+```
