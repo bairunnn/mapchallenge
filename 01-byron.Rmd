@@ -17,8 +17,8 @@ library(sf)
 library(leaflet)
 library(extrafont)
 
-font_import()  # This may take some time
-loadfonts()
+# font_import()  # This may take some time
+# loadfonts()
 
 ```
 
@@ -34,27 +34,29 @@ sg <- st_read("./Data/mp2019regions.geojson")
 
 ```{r}
 plot1 <- ggplot() +
-  geom_sf(data = sg, fill = "#f9f2e7", color = "white", size = 5) + # sg polygons with white borders and #f9f2e7 fill
+  geom_sf(data = sg, fill = "#f9f2e7", color = "white", size = 5) +  # sg polygons with white borders and #f9f2e7 fill
   geom_sf(data = condos, color = "#a2415c", size = 1.5) +   
-  theme_minimal(base_family = "Inter") +    
-  labs(title = '27 Condominiums in Singapore have names beginning with D\'',
-       subtitle = "E.G. D'Focus, D'Zire, D'Sunrise...\nWho came up with all these odd names???\nWhy???") +
+  theme_minimal(base_family = "Lato") +  # Set base font to Lato
+  labs(
+    title = '27 Condominiums in Singapore have names beginning with D\'',
+    subtitle = "E.G. D'Focus, D'Zire, D'Sunrise...\nWho came up with all these odd names?"
+  ) +
   annotate(
     "text", x = 104.052232, y = 1.190729,                      
     label = "30DayMapChallenge\nDay #1\nPointless Points\nByron",
     color = "#7f8181", size = 3, hjust = 1, vjust = 1,
-    family = "Inter" 
+    family = "Lato"  # Use Lato for annotation text
   ) +
   annotate(
     "text", x = 103.609410, y = 1.192789,
     label = str_wrap("D’Nest, Cote D’Azur, D’Almira, D’Banyan, D’Cambridge, D’Casita, D’Chateau @ Shelford, D’Dalvey, D’Ecosia, D’Elias, D’Evelyn, D’focus Apartments, D’Gallery, D’Grove Villas, D’Hiro @ Hillside, D’Ixoras, D’Leedon, D’Lotus, D’Manor, D’Mansions, D’Marine, D’Mira, D’Oasia, D’Palma, D’Pavilion, D’Sunrise, D’Zire.", width = 50),
     color = "#7f8181", size = 2, hjust = 0, vjust = 1,  
-    family = "Inter"                
+    family = "Lato"  # Use Lato for annotation text
   ) +
   theme(
-    plot.title = element_text(size = 14),                
-    axis.title = element_blank(),                       
-    axis.text = element_blank(),                 
+    plot.title = element_text(size = 14, face = "bold", family = "Lato Black"),  # Use Lato Black for the title
+    axis.title = element_blank(),
+    axis.text = element_blank(),
     panel.grid = element_blank()    
   )
 
@@ -65,7 +67,7 @@ plot1
 ```{r}
 # ggsave("day1_condominiums.png", plot = plot1, width = 10, height = 8, dpi = 600)
 
-png("day1_condominiums.png", width = 3200, height = 2100, res = 300)
+png("01-Byron-Points.png", width = 3200, height = 2100, res = 300)
 
 # Print the plot to the device
 print(plot1)
