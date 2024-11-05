@@ -54,7 +54,6 @@ invalid_geometries <- !st_is_valid(sg)
 if (any(invalid_geometries)) {
   print(paste("Invalid geometries found in indices:", which(invalid_geometries)))
   
-  # Make geometries valid
   sg$geometry <- st_make_valid(sg$geometry)
   
   print("Invalid geometries have been fixed.")
@@ -66,37 +65,29 @@ sg$area <- st_area(sg)
 intersections <- st_intersection(sg, housing)
 intersections$intersected_area <- st_area(intersections)
 
-# Ensure all geometries in sg and intersections are valid
 sg <- st_make_valid(sg)
 intersections <- st_make_valid(intersections)
 
-# Perform the intersection
 intersected <- st_intersection(sg, intersections)
 
-# Check for invalid geometries after intersection
 if (!all(st_is_valid(intersected))) {
   invalid_indices <- which(!st_is_valid(intersected))
   print(paste("Invalid geometries found in intersections at indices:", paste(invalid_indices, collapse = ", ")))
   intersected <- st_make_valid(intersected)  # Fix invalid geometries
 }
 
-# Calculate the intersected area
 intersect_pct <- intersected %>% 
-  mutate(intersect_area = st_area(.)) %>%   # Create new column with shape area
-  dplyr::select(Name, intersect_area) %>%    # Only select columns needed to merge
-  st_drop_geometry()                          # Drop geometry as we don't need it
+  mutate(intersect_area = st_area(.)) %>%   
+  dplyr::select(Name, intersect_area) %>%    
+  st_drop_geometry()                          
 
-# Calculate the subzone area for sg
 sg <- sg %>% mutate(subzone_area = st_area(sg))
 
-# Merge intersect_pct back into sg
 sg <- merge(sg, intersect_pct, by = "Name", all.x = TRUE)
 
-# Calculate coverage
 sg <- sg %>% 
   mutate(coverage = as.numeric(intersect_area / subzone_area))
 
-# View results
 print(sg[, c("Name", "subzone_area", "intersect_area", "coverage")])
 
 sg$coverage[is.na(sg$coverage)] <- 0
@@ -124,12 +115,12 @@ ggplot() +
 
 ```{r}
 ggplot(data = sg) +
-  geom_sf(aes(fill = coverage), color = NA) +  # Fill based on proportion_intersection
-  scale_fill_viridis_c(option = "C", na.value = "lightgrey") +  # Use a color scale
+  geom_sf(aes(fill = coverage), color = NA) +  
+  scale_fill_viridis_c(option = "C", na.value = "lightgrey") +  
   labs(title = "Proportion of Intersection with Housing",
-       fill = "Proportion\nof Intersection") +  # Add title and legend label
-  theme_minimal() +  # Use a minimal theme
-  theme(legend.position = "right")  # Position the legend on the right
+       fill = "Proportion\nof Intersection") + 
+  theme_minimal() +  
+  theme(legend.position = "right") 
 ```
 
 ```{r}
@@ -160,7 +151,6 @@ invalid_geometries <- !st_is_valid(hex_grid)
 if (any(invalid_geometries)) {
   print(paste("Invalid geometries found in indices:", which(invalid_geometries)))
   
-  # Make geometries valid
   hex_grid$geometry <- st_make_valid(hex_grid$geometry)
   
   print("Invalid geometries have been fixed.")
@@ -168,48 +158,38 @@ if (any(invalid_geometries)) {
   print("All geometries are valid.")
 }
 
-# Calculate area for hex_grid
 hex_grid$area <- st_area(hex_grid)
 
-# Perform intersection with housing
 intersections <- st_intersection(hex_grid, housing)
 intersections$intersected_area <- st_area(intersections)
 
-# Ensure all geometries in hex_grid and intersections are valid
 hex_grid <- st_make_valid(hex_grid)
 intersections <- st_make_valid(intersections)
 
-# Perform the intersection
 intersected <- st_intersection(hex_grid, intersections)
 
-# Check for invalid geometries after intersection
 if (!all(st_is_valid(intersected))) {
   invalid_indices <- which(!st_is_valid(intersected))
   print(paste("Invalid geometries found in intersections at indices:", paste(invalid_indices, collapse = ", ")))
-  intersected <- st_make_valid(intersected)  # Fix invalid geometries
+  intersected <- st_make_valid(intersected)  
 }
 
-# Calculate the intersected area
 intersect_pct <- intersected %>% 
-  mutate(intersect_area = st_area(.)) %>%   # Create new column with shape area
-  dplyr::select(Name, intersect_area) %>%    # Only select columns needed to merge
-  st_drop_geometry()                          # Drop geometry as we don't need it
+  mutate(intersect_area = st_area(.)) %>%   
+  dplyr::select(Name, intersect_area) %>%    
+  st_drop_geometry()                          
 
-# Calculate the subzone area for hex_grid
 hex_grid <- hex_grid %>% mutate(subzone_area = st_area(hex_grid))
 
-# Merge intersect_pct back into hex_grid
 hex_grid <- merge(hex_grid, intersect_pct, by = "Name", all.x = TRUE)
 
-# Calculate coverage
 hex_grid <- hex_grid %>% 
   mutate(coverage = as.numeric(intersect_area / subzone_area))
 
-# Replace NA values in coverage with 0
 hex_grid$coverage[is.na(hex_grid$coverage)] <- 0
 
-# Ensure coverage is numeric
 hex_grid$coverage <- as.numeric(hex_grid$coverage)
+
 ```
 
 ```{r}
@@ -222,12 +202,12 @@ non_intersecting_hex <- hex_grid[!st_intersects(hex_grid, sg, sparse = FALSE), ]
 ```{r}
 
 ggplot(data = hex_grid) +
-  geom_sf(aes(fill = coverage), color = NA) +  # Fill based on proportion_intersection
-  scale_fill_viridis_c(option = "C", na.value = "lightgrey") +  # Use a color scale
+  geom_sf(aes(fill = coverage), color = NA) +  
+  scale_fill_viridis_c(option = "C", na.value = "lightgrey") +  
   labs(title = "Proportion of Intersection with Housing (Hexagonal Representation)",
-       fill = "Proportion\nof Intersection") +  # Add title and legend label
-  theme_minimal() +  # Use a minimal theme
-  theme(legend.position = "right")  # Position the legend on the right
+       fill = "Proportion\nof Intersection") +  
+  theme_minimal() +  
+  theme(legend.position = "right")  
 
 ```
 
@@ -238,7 +218,7 @@ plot4 <- ggplot(data = hex_grid) +
   geom_sf(aes(fill = coverage), color = NA) +
   scale_fill_gradientn(colors = custom_palette, na.value = "lightgrey") + 
   labs(
-    title = "Going Public: Proportion of Public Housing by Subzones",
+    title = "Going Public: Proportion of Public Housing across Singapore",
     subtitle = "Our oldest towns are not necessarily those with a higher % of public housing...",
     fill = "Public Housing Density"
   ) + 
@@ -259,10 +239,10 @@ plot4 <- ggplot(data = hex_grid) +
     plot.subtitle = element_text(size = 12, family = "Lato"),
     legend.title = element_text(family = "Lato", size = 10, color = "#474849"),  # Set legend title font
     legend.text = element_text(family = "Lato", size = 10, color = "#474849"),   # Set legend text font
-    legend.position = "right",                     # Position legend at the bottom
+    legend.position = "right",                     
     axis.title = element_blank(),
-    axis.text = element_blank(),  # Remove axis text
-    axis.ticks = element_blank(),  # Remove axis ticks
+    axis.text = element_blank(),  
+    axis.ticks = element_blank(), 
     panel.grid = element_blank(),
     panel.background = element_blank(),
     plot.background = element_blank()
@@ -280,4 +260,74 @@ print(plot4)
 
 # Close the device
 dev.off()
+```
+
+```{r}
+
+# for fun
+
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Define bounding box from the sg object
+bbox <- st_bbox(sg)
+
+# Generate points for the cat's face (oval)
+set.seed(123)  # For reproducibility
+
+# Create a data frame to hold the points
+points_df <- data.frame(x = numeric(), y = numeric())
+
+# Generate head points for an oval shape
+n_head <- 5000  # Total points for the head
+head_oval_x <- seq(-0.1, 0.1, length.out = n_head)
+head_oval_y <- (0.05 * (1 - (head_oval_x^2) / (0.1^2))) + (bbox$ymin + bbox$ymax) / 2
+
+# Combine head points
+head_x <- head_oval_x + (bbox$xmin + bbox$xmax) / 2
+head_y <- head_oval_y + (bbox$ymin + bbox$ymax) / 2
+points_df <- rbind(points_df, data.frame(x = head_x, y = head_y))
+
+# Generate points for the ears
+ear_radius <- 0.02  # Adjust the size of the ears
+ear_left_x <- c(-0.1, -0.1 + ear_radius * cos(seq(0, pi, length.out = 50)))
+ear_left_y <- c(0.05, 0.05 + ear_radius * sin(seq(0, pi, length.out = 50))) + (bbox$ymin + bbox$ymax) / 2
+
+ear_right_x <- c(0.1, 0.1 - ear_radius * cos(seq(0, pi, length.out = 50)))
+ear_right_y <- c(0.05, 0.05 + ear_radius * sin(seq(0, pi, length.out = 50))) + (bbox$ymin + bbox$ymax) / 2
+
+# Combine ear points
+points_df <- rbind(points_df, data.frame(x = ear_left_x + (bbox$xmin + bbox$xmax) / 2, 
+                                          y = ear_left_y))
+points_df <- rbind(points_df, data.frame(x = ear_right_x + (bbox$xmin + bbox$xmax) / 2, 
+                                          y = ear_right_y))
+
+# Generate points for the mouth (smile in a 'w' shape)
+n_mouth <- 50  # Number of points for the mouth
+mouth_x <- seq(-0.04, 0.04, length.out = n_mouth) + (bbox$xmin + bbox$xmax) / 2
+mouth_y <- -0.05 * (sin(seq(0, pi, length.out = n_mouth))) + (bbox$ymin + bbox$ymax) / 2 - 0.03
+
+# Combine mouth points
+points_df <- rbind(points_df, data.frame(x = mouth_x, y = mouth_y))
+
+# Create an sf object from the points
+cat_face_sf <- st_as_sf(points_df, coords = c("x", "y"), crs = st_crs(sg))
+
+# Optionally plot the points to check
+plot(st_geometry(cat_face_sf), col = "yellow", pch = 19, main = "Smiling Cat Face")
+
+plot_combined <- ggplot() +
+  geom_sf(data = sg, fill = NA, color = "blue", size = 0.5) +  # Plot sg with a border
+  geom_sf(data = cat_face_sf, color = "yellow", size = 1.5) +  # Plot the cat face points
+  labs(title = "Cat Face Within Subzones",
+       subtitle = "Smiling Cat Face Represented with Points") +
+  theme_minimal() +  # Use a minimal theme
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+
+# Display the plot
+print(plot_combined)
 ```
