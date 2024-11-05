@@ -1,0 +1,283 @@
+---
+title: "day-4"
+author: "Byron"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(extrafont)
+library(tidygeocoder)
+library(classInt)
+library(purrr)
+library(viridis)
+options(scipen = 999)
+
+# font_import()  
+# loadfonts()
+
+```
+
+# Data
+
+```{r, warning=FALSE, results='hide'}
+housing <- st_read("./Data/ExistingHDBDissolved.geojson")
+sg <- st_read("./Data/mp2019subzones_mainland.geojson")
+
+str(housing)
+str(sg)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = housing, fill = NA, color = "red") +
+  theme_minimal()
+
+```
+
+```{r}
+
+sg <- st_as_sf(sg)
+housing <- st_as_sf(housing)
+
+invalid_geometries <- !st_is_valid(sg)
+
+if (any(invalid_geometries)) {
+  print(paste("Invalid geometries found in indices:", which(invalid_geometries)))
+  
+  # Make geometries valid
+  sg$geometry <- st_make_valid(sg$geometry)
+  
+  print("Invalid geometries have been fixed.")
+} else {
+  print("All geometries are valid.")
+}
+
+sg$area <- st_area(sg)
+intersections <- st_intersection(sg, housing)
+intersections$intersected_area <- st_area(intersections)
+
+# Ensure all geometries in sg and intersections are valid
+sg <- st_make_valid(sg)
+intersections <- st_make_valid(intersections)
+
+# Perform the intersection
+intersected <- st_intersection(sg, intersections)
+
+# Check for invalid geometries after intersection
+if (!all(st_is_valid(intersected))) {
+  invalid_indices <- which(!st_is_valid(intersected))
+  print(paste("Invalid geometries found in intersections at indices:", paste(invalid_indices, collapse = ", ")))
+  intersected <- st_make_valid(intersected)  # Fix invalid geometries
+}
+
+# Calculate the intersected area
+intersect_pct <- intersected %>% 
+  mutate(intersect_area = st_area(.)) %>%   # Create new column with shape area
+  dplyr::select(Name, intersect_area) %>%    # Only select columns needed to merge
+  st_drop_geometry()                          # Drop geometry as we don't need it
+
+# Calculate the subzone area for sg
+sg <- sg %>% mutate(subzone_area = st_area(sg))
+
+# Merge intersect_pct back into sg
+sg <- merge(sg, intersect_pct, by = "Name", all.x = TRUE)
+
+# Calculate coverage
+sg <- sg %>% 
+  mutate(coverage = as.numeric(intersect_area / subzone_area))
+
+# View results
+print(sg[, c("Name", "subzone_area", "intersect_area", "coverage")])
+
+sg$coverage[is.na(sg$coverage)] <- 0
+
+sg$coverage <- as.numeric(sg$coverage)
+
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = intersections, fill = NA, color = "green") +
+  geom_sf(data = sg, fill = NA, color = "grey") +
+  theme_minimal()
+```
+
+```{r}
+# sg <- st_join(sg, intersections[, c("intersected_area")], join = st_intersects)
+# sg$area <- st_area(sg)
+# 
+# sg$proportion_intersection <- sg$intersected_area / sg$area
+# sg$proportion_intersection[is.na(sg$proportion_intersection)] <- 0
+# sg$proportion_intersection <- as.numeric(sg$proportion_intersection)
+
+```
+
+```{r}
+ggplot(data = sg) +
+  geom_sf(aes(fill = coverage), color = NA) +  # Fill based on proportion_intersection
+  scale_fill_viridis_c(option = "C", na.value = "lightgrey") +  # Use a color scale
+  labs(title = "Proportion of Intersection with Housing",
+       fill = "Proportion\nof Intersection") +  # Add title and legend label
+  theme_minimal() +  # Use a minimal theme
+  theme(legend.position = "right")  # Position the legend on the right
+```
+
+```{r}
+
+sg <- st_as_sf(sg)
+hex_grid <- st_make_grid(sg, cellsize = .01, square = FALSE)
+hex_grid <- hex_grid[sg]
+
+
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = hex_grid, fill = NA, color = "red") +
+  theme_minimal()
+
+```
+
+```{r}
+# See https://r-spatial.github.io/sf/reference/st_make_grid.html 
+hex_grid <- st_as_sf(hex_grid)
+hex_grid <- hex_grid %>%
+  mutate(Name = paste0("Polygon_", row_number()))  
+housing <- st_as_sf(housing)
+
+invalid_geometries <- !st_is_valid(hex_grid)
+
+if (any(invalid_geometries)) {
+  print(paste("Invalid geometries found in indices:", which(invalid_geometries)))
+  
+  # Make geometries valid
+  hex_grid$geometry <- st_make_valid(hex_grid$geometry)
+  
+  print("Invalid geometries have been fixed.")
+} else {
+  print("All geometries are valid.")
+}
+
+# Calculate area for hex_grid
+hex_grid$area <- st_area(hex_grid)
+
+# Perform intersection with housing
+intersections <- st_intersection(hex_grid, housing)
+intersections$intersected_area <- st_area(intersections)
+
+# Ensure all geometries in hex_grid and intersections are valid
+hex_grid <- st_make_valid(hex_grid)
+intersections <- st_make_valid(intersections)
+
+# Perform the intersection
+intersected <- st_intersection(hex_grid, intersections)
+
+# Check for invalid geometries after intersection
+if (!all(st_is_valid(intersected))) {
+  invalid_indices <- which(!st_is_valid(intersected))
+  print(paste("Invalid geometries found in intersections at indices:", paste(invalid_indices, collapse = ", ")))
+  intersected <- st_make_valid(intersected)  # Fix invalid geometries
+}
+
+# Calculate the intersected area
+intersect_pct <- intersected %>% 
+  mutate(intersect_area = st_area(.)) %>%   # Create new column with shape area
+  dplyr::select(Name, intersect_area) %>%    # Only select columns needed to merge
+  st_drop_geometry()                          # Drop geometry as we don't need it
+
+# Calculate the subzone area for hex_grid
+hex_grid <- hex_grid %>% mutate(subzone_area = st_area(hex_grid))
+
+# Merge intersect_pct back into hex_grid
+hex_grid <- merge(hex_grid, intersect_pct, by = "Name", all.x = TRUE)
+
+# Calculate coverage
+hex_grid <- hex_grid %>% 
+  mutate(coverage = as.numeric(intersect_area / subzone_area))
+
+# Replace NA values in coverage with 0
+hex_grid$coverage[is.na(hex_grid$coverage)] <- 0
+
+# Ensure coverage is numeric
+hex_grid$coverage <- as.numeric(hex_grid$coverage)
+```
+
+```{r}
+non_intersecting_hex <- hex_grid[!st_intersects(hex_grid, sg, sparse = FALSE), ]
+
+```
+
+# Map
+
+```{r}
+
+ggplot(data = hex_grid) +
+  geom_sf(aes(fill = coverage), color = NA) +  # Fill based on proportion_intersection
+  scale_fill_viridis_c(option = "C", na.value = "lightgrey") +  # Use a color scale
+  labs(title = "Proportion of Intersection with Housing (Hexagonal Representation)",
+       fill = "Proportion\nof Intersection") +  # Add title and legend label
+  theme_minimal() +  # Use a minimal theme
+  theme(legend.position = "right")  # Position the legend on the right
+
+```
+
+```{r}
+custom_palette <- c("#edefea", "#7bbac2", "#5a9baa", "#3f798e", "#2a5674")
+
+plot4 <- ggplot(data = hex_grid) +
+  geom_sf(aes(fill = coverage), color = NA) +
+  scale_fill_gradientn(colors = custom_palette, na.value = "lightgrey") + 
+  labs(
+    title = "Going Public: Proportion of Public Housing by Subzones",
+    subtitle = "Our oldest towns are not necessarily those with a higher % of public housing...",
+    fill = "Public Housing Density"
+  ) + 
+  annotate(
+    "text", x = 104.037, y = 1.27,
+    label = "30DayMapChallenge\nDay #4\nHomely Hexagons\nByron",
+    color = "#7f8181", size = 3, hjust = 1, vjust = 1,
+    family = "Lato"
+  ) +
+  annotate(
+    "text", x = 103.609410, y = 1.192789,
+    label = "",
+    color = "#7f8181", size = 2, hjust = 0, vjust = 1,
+    family = "Lato"
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lato"),
+    plot.subtitle = element_text(size = 12, family = "Lato"),
+    legend.title = element_text(family = "Lato", size = 10, color = "#474849"),  # Set legend title font
+    legend.text = element_text(family = "Lato", size = 10, color = "#474849"),   # Set legend text font
+    legend.position = "right",                     # Position legend at the bottom
+    axis.title = element_blank(),
+    axis.text = element_blank(),  # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    plot.background = element_blank()
+  )
+
+plot4
+```
+
+```{r}
+
+png("04-Byron-Hexagons.png", width = 3200, height = 2100, res = 300)
+
+# Print the plot to the device
+print(plot4)
+
+# Close the device
+dev.off()
+```
