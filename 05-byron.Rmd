@@ -1,0 +1,193 @@
+---
+title: "day-5"
+author: "Byron"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(extrafont)
+library(tidygeocoder)
+library(classInt)
+library(purrr)
+library(viridis)
+library(ggtext)
+
+options(scipen = 999)
+
+
+# font_import()  
+# loadfonts()
+
+```
+
+# Playground
+
+```{r import_data, warning=FALSE, results='hide'}
+disruption_line <- st_read("./Data/disruptedEWL.geojson")
+disruption_station <- st_read("./Data/disruptedEWL_stations.geojson")
+disruption_timestamps <- st_read("./Data/disrupted_timeline.geojson")
+disruption_trail <- st_read("./Data/disrupted_trail.geojson")
+
+```
+
+## Cleaning
+
+```{r cleann}
+disruption_timestamps$time <- format(strptime(disruption_timestamps$time, "%H:%M:%S"), "%I:%M %p")
+
+```
+
+## Bare bones ggplot
+
+```{r}
+ggplot() +
+  geom_sf(data = disruption_line, color = "#009544", size = 1) +           # Plot the line with blue color
+  geom_sf(data = disruption_station, color = "#009544", size = 3, shape = 21, fill = "#009544") +  # Plot stations with red outlines and yellow fill
+  labs(title = "Disruption Line and Stations") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)  # Center align title
+  )
+```
+
+## basemap?
+
+```{r}
+
+
+```
+
+## With some mods
+
+```{r plot_it}
+plot5 <- ggplot() +
+  geom_sf(data = disruption_trail, fill = "#efc0a0b0", color = NA) +
+  geom_sf(data = disruption_line, color = "#009544", size = 1) +
+  geom_sf(data = disruption_station, color = "#009544", size = 3, shape = 21, fill = "#009544") + 
+  geom_sf_label(
+    data = disruption_station, aes(label = name),
+    family = "LTAIdentity", color = "black", size = 5,
+    nudge_x = 0.0, fill = "#f6f5ef", label.size = 0 
+  ) +
+  geom_sf_label(
+    data = disruption_timestamps, aes(label = time),
+    family = "Lato", color = "black", size = 4,
+    nudge_x = 0.0, fill = "#ded9ca", label.size = 0
+  ) +
+  labs(title = "Jittered Journeys: 25 Sep East West Line Incident",
+       subtitle = "500,000 out of 2.8 million MRT journeys affected daily, for 6 days") +
+  theme_minimal(base_family = "Lato") +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lato"),
+    plot.subtitle = element_text(size = 12, family = "Lato"),
+    panel.grid = element_blank(),               # Remove grid lines
+    axis.title = element_blank(),               # Remove axis titles
+    axis.text = element_blank(),                # Remove axis text
+    axis.ticks = element_blank()                # Remove axis ticks
+  ) +
+  annotate("text", 
+           x = 103.762, y = 1.3249, 
+           label = "#4 Trail of destruction\n1.6 km of damaged third rail, cables, and points",
+           color = "#d9af92", size = 5, fontface = "bold", 
+           hjust = 0, vjust = 0, family = "Lato") +
+  annotate("text", 
+           x = 103.762949, y = 1.3135, 
+           label = "#1 The fateful trigger\nEquipment fault developed in eastbound train",
+           color = "black", size = 4, 
+           hjust = 1, vjust = 0, family = "Lato") +
+  annotate("text", 
+           x = 103.760, y = 1.318779, 
+           label = "#2 Collateral damage\nPower outage and subsequent de-training\nof eastbound train behind",
+           color = "black", size = 4, 
+           hjust = 1, vjust = 0, family = "Lato") +
+  annotate("text", 
+           x = 103.771, y = 1.3136, 
+           label = "#3 Worsening of the situation\nDislodging of original faulty train's\nwheel axle box, which caused\nsubsequent damage to rail equipment",
+           color = "black", size = 4, 
+           hjust = 0, vjust = 0, family = "Lato") 
+
+plot5
+```
+
+```{r another_approach}
+
+plot5 <- ggplot() +
+  geom_sf(data = disruption_trail, fill = "#efc0a0b0", color = NA) +
+  geom_sf(data = disruption_line, color = "#009544", size = 1) +
+  geom_sf(data = disruption_station, color = "#009544", size = 3, shape = 21, fill = "#009544") + 
+  geom_sf_label(
+    data = disruption_station, aes(label = name),
+    family = "LTAIdentity", color = "black", size = 5,
+    nudge_x = 0.0, fill = "#f6f5ef", label.size = 0 
+  ) +
+  geom_sf_label(
+    data = disruption_timestamps, aes(label = time),
+    family = "Lato", color = "black", size = 4,
+    nudge_x = 0.0, fill = "#ded9ca", label.size = 0
+  ) +
+  labs(title = "Jittered Journeys: 25 Sep East West Line Incident",
+       subtitle = "500,000 out of 2.8 million MRT journeys affected daily, for 6 days") +
+  theme_minimal(base_family = "Lato") +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lato"),
+    plot.subtitle = element_text(size = 12, family = "Lato"),
+    panel.grid = element_blank(),               # Remove grid lines
+    axis.title = element_blank(),               # Remove axis titles
+    axis.text = element_blank(),                # Remove axis text
+    axis.ticks = element_blank()                # Remove axis ticks
+  ) +
+  ggtext::geom_textbox(
+    aes(x = 103.761, y = 1.3249, 
+        label = "<b>#4<br>Trail of destruction</b><br>1.6 km of damaged third rail, cables, and points"),
+    color = "#d9af92", size = 5, 
+    hjust = 0, vjust = 0, family = "Lato", box.padding = unit(c(0.5, -1, 0.5, 0.5), "lines"), box.color = NA
+  ) +
+  ggtext::geom_textbox(
+    aes(x = 103.763, y = 1.3122, 
+        label = "<b>#1<br>The fateful trigger</b><br>Equipment fault developed in eastbound train"),
+    color = "black", size = 4, 
+    hjust = 1, vjust = 0, family = "Lato", box.padding = unit(0.5, "lines"), box.color = NA
+  ) +
+  ggtext::geom_textbox(
+    aes(x = 103.760, y = 1.3181, 
+        label = "<b>#2<br>Collateral damage</b><br>Power outage and subsequent de-training of eastbound train behind"),
+    color = "black", size = 4, 
+    hjust = 1, vjust = 0, family = "Lato", box.padding = unit(0.5, "lines"), box.color = NA
+  ) +
+  ggtext::geom_textbox(
+    aes(x = 103.772, y = 1.3136, 
+        label = "<b>#3<br>Worsening of the situation</b><br>Dislodging of original faulty train's wheel axle box, which caused subsequent damage to rail equipment"),
+    color = "black", size = 4, 
+    hjust = 0, vjust = 0, family = "Lato", box.padding = unit(c(0.5, -1, 0.5, 0.5), "lines"), box.color = NA
+  ) +
+  ggtext::geom_textbox(
+    aes(x = 103.740, y = 1.3125, 
+        label = "30DayMapChallenge<br>Day #5<br>Jittered Journeys<br>Byron"),
+    color = "#7f8181", size = 3, 
+    hjust = 0, vjust = 0, family = "Lato", box.padding = unit(0.5, "lines"), box.color = NA
+  ) 
+
+plot5
+```
+
+# Export
+
+```{r}
+png("05-Byron-Journey.png", width = 3200, height = 2100, res = 300)
+
+# Print the plot to the device
+print(plot5)
+
+# Close the device
+dev.off()
+```

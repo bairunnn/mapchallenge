@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "disruptedEWL_stations",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "OBJECTID": 143, "osm_id": "209451013", "ref": "EW22", "wikipedia": " ", "wikidata": "Q3272303", "network": "East West Line (EWL)", "name_en": "Dover", "name": "Dover", "path": "Point?crs=EPSG:4326&field=full_id:string(0,0)&field=osm_id:string(0,0)&field=osm_type:string(0,0)&field=railway:string(0,0)&field=door:string(0,0)&field=drive_through:string(0,0)&field=collection_times:string(0,0)&field=check_date%3Acollection_times:stri" }, "geometry": { "type": "Point", "coordinates": [ 103.778610800048455, 1.311415499625639 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 144, "osm_id": "209451044", "ref": "EW23", "wikipedia": "en:Clementi MRT station", "wikidata": "Q3272296", "network": "East West Line (EWL)", "name_en": "Clementi", "name": "Clementi", "path": "Point?crs=EPSG:4326&field=full_id:string(0,0)&field=osm_id:string(0,0)&field=osm_type:string(0,0)&field=railway:string(0,0)&field=door:string(0,0)&field=drive_through:string(0,0)&field=collection_times:string(0,0)&field=check_date%3Acollection_times:stri" }, "geometry": { "type": "Point", "coordinates": [ 103.765231100335086, 1.315100299938933 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 145, "osm_id": "209451066", "ref": "NS1;EW24;JE5", "wikipedia": "en:Jurong East MRT station", "wikidata": "Q3121386", "network": "North South Line (NSL)/East West Line (EWL)", "name_en": "Jurong East", "name": "Jurong East", "path": "Point?crs=EPSG:4326&field=full_id:string(0,0)&field=osm_id:string(0,0)&field=osm_type:string(0,0)&field=railway:string(0,0)&field=door:string(0,0)&field=drive_through:string(0,0)&field=collection_times:string(0,0)&field=check_date%3Acollection_times:stri" }, "geometry": { "type": "Point", "coordinates": [ 103.742293899643812, 1.333107999934271 ] } }
+]
+}
