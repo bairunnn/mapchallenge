@@ -22,6 +22,7 @@ library(purrr)
 library(viridis)
 library(ggtext)
 library(extrafont)
+library(ggimage)
 
 options(scipen = 999)
 
@@ -91,7 +92,6 @@ lines <- st_transform(lines, crs = 4326)
 poi <- st_transform(poi, crs = 4326)
 termini <- st_transform(termini, crs = 4326)
 
-
 plot7 <- ggplot() +
   geom_sf(data = sea, fill = "#b7d0b8", color = NA) +
   geom_sf(data = land, fill = "#fff3cc", color = NA) +
@@ -99,23 +99,53 @@ plot7 <- ggplot() +
   geom_sf(data = termini, shape = 15, color = "#d4a731", size = 3) +
   geom_sf(data = poi, shape = 15, color = "black", size = 1) +
   geom_sf_text(data = poi, aes(label = Name), color = "black", size = 2, family = "Old Standard TT", fontface = "italic", vjust = -0.7) +
-  geom_sf_text(data = termini, aes(label = Name), color = "black", size = 2.5, family = "Old Standard TT", fontface = "italic", vjust = 1.5) +
+  geom_sf_text(data = termini, aes(label = Name), color = "black", size = 2.5, family = "Old Standard TT", fontface = "italic", vjust = 1.8) +
   ggtext::geom_textbox(
     aes(x = 103.872369, y = 1.280484, 
         label = "MAP OF<br>THE TRAMWAYS OF SINGAPORE"), 
     family = "Old Standard TT", fontface = "bold", color = "black", 
     box.color = NA, fill = NA, size = 4, hjust = 0.5, vjust = 0.5,
-    width = unit(3, "in"), # Adjust the width as needed
+    width = unit(3, "in"), 
     halign = 0.5, valign = 0.5, lineheight = 1.2
   ) +
   ggtext::geom_textbox(
     aes(x = 103.872369, y = 1.277, 
-        label = "THE FINEST RIDES IN THE EMPIRE"), 
+        label = "NOTHING BUT THE FINEST RIDES IN THE EMPIRE"), 
     family = "Old Standard TT", color = "black", 
     box.color = NA, fill = NA, size = 3, hjust = 0.5, vjust = 0.5,
-    width = unit(3, "in"), # Adjust the width as needed
+    width = unit(4, "in"), 
     halign = 0.5, valign = 0.5, lineheight = 1.2
   ) +
+  ggtext::geom_textbox(
+    aes(x = 103.872369, y = 1.274, 
+        label = "NOTHING BUT THE FINEST RIDES IN THE EMPIRE"), 
+    family = "Old Standard TT", color = "black", 
+    box.color = NA, fill = NA, size = 3, hjust = 0.5, vjust = 0.5,
+    width = unit(4, "in"), 
+    halign = 0.5, valign = 0.5, lineheight = 1.2
+  ) +
+  ggtext::geom_textbox(
+    aes(x = 103.872369, y = 1.271, 
+        label = "30 day map challenge<br>Day #7<br>Transient Tramways<br>Chief Administrator Byron"), 
+    family = "Old Standard TT", color = "black", 
+    box.color = NA, fill = NA, size = 3, hjust = 0.5, vjust = 0.5,
+    width = unit(4, "in"), 
+    halign = 0.5, valign = 0.5, lineheight = 1.2,
+    fontface = "italic"
+  ) +
+  ggtext::geom_textbox(
+    aes(x = 103.872369, y = 1.265, 
+        label = "His Majesty can be assured that this fine piece of cartographic work is not produced by a computer and is instead made with the most excellent craftmanship of Byron the Administrator"), 
+    family = "Old Standard TT", color = "black", 
+    box.color = NA, fill = NA, size = 2.5, hjust = 0.5, vjust = 0.5,
+    width = unit(3, "in"), 
+    halign = 0.5, valign = 0.5, lineheight = 1.2,
+    fontface = "italic"
+  ) +
+  # ggimage::geom_image(
+  #   aes(x = 103.872369, y = 1.287, image = "./Data/arrow.png"),
+  #   size = 0.06 
+  # ) +
   theme_minimal(base_family = "Old Standard TT") +
   theme(
     axis.title = element_blank(),
