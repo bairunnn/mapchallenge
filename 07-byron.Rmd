@@ -36,7 +36,7 @@ options(scipen = 999)
 ```{r import_data, warning=FALSE, results='hide'}
 termini <- st_read("./Data/1913/termini.shp")
 poi <- st_read("./Data/1913/pointsofinterest.shp")
-lines <- st_read("./Data/1913/trolley.shp")
+lines <- st_read("./Data/1913/trolley_SmoothLine.shp")
 land <- st_read("./Data/1913/land_Erase.shp")
 sea <- st_read("./Data/1913/ocean_Erase.shp")
 
@@ -85,7 +85,7 @@ ggplot() +
 # Styled ggplot
 
 ```{r plot7}
-
+poi <- poi %>% filter(Name != "Keppel Wharves")
 sea <- st_transform(sea, crs = 4326)
 land <- st_transform(land, crs = 4326)
 lines <- st_transform(lines, crs = 4326)
@@ -99,7 +99,7 @@ plot7 <- ggplot() +
   geom_sf(data = termini, shape = 15, color = "#d4a731", size = 3) +
   geom_sf(data = poi, shape = 15, color = "black", size = 1) +
   geom_sf_text(data = poi, aes(label = Name), color = "black", size = 2, family = "Old Standard TT", fontface = "italic", vjust = -0.7) +
-  geom_sf_text(data = termini, aes(label = Name), color = "black", size = 2.5, family = "Old Standard TT", fontface = "italic", vjust = 1.8) +
+  geom_sf_text(data = termini, aes(label = Name), color = "black", size = 2.5, family = "Old Standard TT", fontface = "italic", vjust = 2.2) +
   ggtext::geom_textbox(
     aes(x = 103.872369, y = 1.280484, 
         label = "MAP OF<br>THE TRAMWAYS OF SINGAPORE"), 
@@ -109,7 +109,7 @@ plot7 <- ggplot() +
     halign = 0.5, valign = 0.5, lineheight = 1.2
   ) +
   ggtext::geom_textbox(
-    aes(x = 103.872369, y = 1.277, 
+    aes(x = 103.872369, y = 1.2755, 
         label = "NOTHING BUT THE FINEST RIDES IN THE EMPIRE"), 
     family = "Old Standard TT", color = "black", 
     box.color = NA, fill = NA, size = 3, hjust = 0.5, vjust = 0.5,
@@ -117,12 +117,12 @@ plot7 <- ggplot() +
     halign = 0.5, valign = 0.5, lineheight = 1.2
   ) +
   ggtext::geom_textbox(
-    aes(x = 103.872369, y = 1.274, 
-        label = "NOTHING BUT THE FINEST RIDES IN THE EMPIRE"), 
+    aes(x = 103.872369, y = 1.278, 
+        label = "1913"), 
     family = "Old Standard TT", color = "black", 
     box.color = NA, fill = NA, size = 3, hjust = 0.5, vjust = 0.5,
     width = unit(4, "in"), 
-    halign = 0.5, valign = 0.5, lineheight = 1.2
+    halign = 0.5, valign = 0.5, lineheight = 1.2, fontface = "bold"
   ) +
   ggtext::geom_textbox(
     aes(x = 103.872369, y = 1.271, 
