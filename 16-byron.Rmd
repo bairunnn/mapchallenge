@@ -1,0 +1,302 @@
+---
+title: "day-16"
+author: "Byron"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(extrafont)
+library(tidygeocoder)
+library(classInt)
+library(purrr)
+library(viridis)
+library(ggtext)
+library(extrafont)
+library(ggimage)
+library(stringr)
+
+options(scipen = 999)
+
+# font_import()  
+# loadfonts()
+
+```
+
+# Data
+
+## Layers
+
+```{r}
+sg <- st_read("./Data/mp2019PAs_new.geojson")
+chas <- st_read("./Data/CHASClinics.geojson")
+pop <- read.csv("./Data/day3_pop.csv")
+
+```
+
+## Some geoprocessing and cleaning
+
+```{r}
+sf_use_s2(FALSE)
+
+counts_data <- sg %>%
+  st_join(chas, join = st_contains) %>%
+  group_by(PLN_AREA_N, geometry) %>%
+  summarise(counts = n(), .groups = "drop") %>% 
+  st_zm() 
+
+
+counts_data <- counts_data %>%
+  mutate(PLN_AREA_N = str_to_title(PLN_AREA_N))
+
+
+
+pop <- pop %>%
+  mutate(PLN_AREA_N = str_to_title(Name))
+
+
+
+```
+
+## Join population data from wikipedia
+
+```{r}
+joined_data <- counts_data %>%
+  left_join(pop, by = c("PLN_AREA_N" = "Name"))
+
+joined_data <- joined_data %>%
+  mutate(Population = as.numeric(gsub(",", "", Population)))
+
+joined_data <- joined_data %>%
+  mutate(density = counts / Population)
+
+```
+
+## Filter out low density 
+
+```{r}
+joined_data <- joined_data %>%
+  mutate(density = if_else(Population < 1000, NA, density))
+
+# joined_data <- joined_data %>%
+#   filter(!is.na(density))
+```
+
+# Map
+
+## Get class intervals
+
+```{r}
+
+breaks <- classIntervals(joined_data$density, n = 5, style = "jenks")
+joined_data$group <- cut(joined_data$density, breaks = breaks$brks, include.lowest = TRUE)
+
+unique(joined_data$group)
+# [8.89e-05,0.000478] 
+# (0.000478,0.00131]
+# (0.00131,0.00497]
+# (0.00497,0.0107]
+# (0.0107,0.0193]    
+  
+```
+
+```{r}
+joined_data <- joined_data %>%
+  mutate(band = case_when(
+    group == "[8.89e-05,0.000478]" ~ "1st group (lowest density)",
+    group == "(0.000478,0.00131]" ~ "2nd group",
+    group == "(0.00131,0.00497]" ~ "3rd group",
+    group == "(0.00497,0.0107]" ~ "4th group",
+    group == "(0.0107,0.0193]" ~ "5th group (highest density)",
+    TRUE ~ NA_character_  # Fallback for any unmatched groups
+  ))
+
+joined_data <- joined_data %>%
+  mutate(band = factor(band, levels = c("1st group (lowest density)", "2nd group", "3rd group", "4th group", "5th group (highest density)")))
+
+plot3 <- ggplot() +
+  geom_sf(data = joined_data, aes(fill = band), color = "white") +  # Fill based on the group
+  scale_fill_manual(values = c("#cfe6df", "#afc3bd", "#8f9f9a", "#7d8a86", "#74817d"), 
+                    name = "CHAS clinics density in 2024\n(weighted by population\nin Planning Area)", na.value = "#f2faf8") +
+  theme_minimal(base_family = "Lato") + 
+  labs(
+    title = 'Density of CHAS GP Clinics by Planning Area (Weighted by Population)',
+    subtitle = "The allure of Central Area applies to preschoolers too..."
+  ) +
+  annotate(
+    "text", x = 104.052232, y = 1.2,
+    label = "30DayMapChallenge\nDay #16\nClinical Choropleths\nByron",
+    color = "#7f8181", size = 3, hjust = 1, vjust = 1,
+    family = "Lato"
+  ) +
+  annotate(
+    "text", x = 103.609410, y = 1.192789,
+    label = "",
+    color = "#7f8181", size = 2, hjust = 0, vjust = 1,
+    family = "Lato"
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lato Black"), 
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_blank()
+  )
+
+plot3
+```
+
+# Use senior population data
+
+<https://data.gov.sg/datasets/d_9e035622439b5d25a63d7ea0699c9451/view>
+
+Filter out zones / subzones with less than 1000 population
+
+## Clean 2020 population data
+
+```{r}
+
+pop_2020 <- read_csv("./Data/ResidentPopulationbyPlanningAreaSubzoneofResidenceAgeGroupandFloorAreaofResidenceCensusofPopulation2020.csv")
+
+pop_2020 <- pop_2020 %>%
+  mutate(pop = if_else(Total1_Total < 1000, NA, Total1_Total))
+
+pop_2020 <- pop_2020 %>%
+  filter(!is.na(pop))
+
+pop_2020 <- pop_2020 %>%
+  filter(str_detect(Number, "Total"))
+
+pop_2020 <- pop_2020 %>%
+  filter(Number != "Total")
+
+pop_2020 <- pop_2020 %>%
+  mutate(Number = str_replace(Number, " - Total", ""))
+
+
+```
+
+## Calculate seniors
+
+```{r}
+pop_2020 <- pop_2020 %>%
+  mutate(across(c(
+    Total1_50_54, Total1_55_59, Total1_60_64, Total1_65_69, 
+    Total1_70_74, Total1_75_79, Total1_80_84, Total1_85_89, 
+    Total1_90andOver
+  ), as.numeric))
+
+pop_2020 <- pop_2020 %>%
+  mutate(senior_pop = rowSums(across(c(
+    Total1_50_54, Total1_55_59, Total1_60_64, Total1_65_69, 
+    Total1_70_74, Total1_75_79, Total1_80_84, Total1_85_89, 
+    Total1_90andOver
+  ), ~ .), na.rm = TRUE))
+
+pop_2020 <- pop_2020 %>%
+  select(Number, senior_pop)
+
+joined_data <- joined_data %>%
+  left_join(pop_2020, by = c("PLN_AREA_N" = "Number"))
+```
+
+## Calculate density like above
+
+```{r}
+
+joined_data <- joined_data %>%
+  mutate(senior_pop = if_else(senior_pop < 1000, NA, senior_pop))
+
+joined_data <- joined_data %>%
+  mutate(density = counts / senior_pop)
+
+breaks <- classIntervals(joined_data$density, n = 7, style = "jenks")
+joined_data$group <- cut(joined_data$density, breaks = breaks$brks, include.lowest = TRUE)
+
+unique(joined_data$group)
+	# 1.	[0.000292,0.000447]
+	# 2.	(0.000447,0.000674]
+	# 3.	(0.000674,0.000851]
+	# 4.	(0.000851,0.00107]
+	# 5.	(0.00107,0.00182]
+	# 6.	(0.00182,0.00289]
+	# 7.	(0.00289,0.0391]
+	# 8.	<NA>  
+```
+
+## Map #2
+
+```{r}
+
+joined_data <- joined_data %>%
+  mutate(band = case_when(
+    group == "[0.000292,0.000447]" ~ "1st group (lowest density)",
+    group == "(0.000447,0.000674]" ~ "2nd group",
+    group == "(0.000674,0.000851]" ~ "3rd group",
+    group == "(0.000851,0.00107]" ~ "4th group",
+    group == "(0.00107,0.00182]" ~ "5th group",
+    group == "(0.00182,0.00289]" ~ "6th group",
+    group == "(0.00289,0.0391]" ~ "7th group",
+    TRUE ~ NA_character_  # Fallback for any unmatched groups
+  ))
+
+joined_data <- joined_data %>%
+  mutate(band = factor(band, levels = c(
+    "1st group (lowest density)", 
+    "2nd group", 
+    "3rd group", 
+    "4th group", 
+    "5th group", 
+    "6th group", 
+    "7th group (highest density)"
+  )))
+
+plot16 <- ggplot() +
+  geom_sf(data = joined_data, aes(fill = band), color = "white", alpha = 0.85) +  # Fill based on the group
+  scale_fill_manual(values = c("#d15b56","#c43138","#7ba8a3","#3e909d","#007896","#004e61"), 
+                    name = "CHAS clinics density in 2024\n(weighted by senior population)", na.value = "#f5d7b0") +
+  theme_minimal(base_family = "Lato") + 
+  labs(
+    title = 'Density of CHAS GP Clinics by Planning Area\n(Weighted by Senior Population (Age>50))',
+    subtitle = "Seniors in the central region tend to be better covered... for now!"
+  ) +
+  annotate(
+    "text", x = 104.052232, y = 1.26,
+    label = "30DayMapChallenge\nDay #16\nClinical Choropleths\nByron\nData: gov.sg\nhttps://data.gov.sg/datasets/\nd_9e035622439b5d25a63\nd7ea0699c9451/view",
+    color = "#7f8181", size = 3, hjust = 1, vjust = 1,
+    family = "Lato"
+  ) +
+  annotate(
+    "text", x = 103.609410, y = 1.192789,
+    label = "",
+    color = "#7f8181", size = 2, hjust = 0, vjust = 1,
+    family = "Lato"
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lato Black"), 
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_blank()
+  )
+
+plot16
+```
+
+```{r}
+
+png("16-Byron-Choropleth.png", width = 3200, height = 2100, res = 300)
+
+# Print the plot to the device
+print(plot16)
+
+# Close the device
+dev.off()
+```

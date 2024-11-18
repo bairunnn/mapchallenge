@@ -18,6 +18,7 @@ library(leaflet)
 library(extrafont)
 library(tidygeocoder)
 library(classInt)
+library(stringr)
 
 # font_import()  # This may take some time
 # loadfonts()
@@ -58,6 +59,9 @@ counts_data <- sg %>%
 counts_data <- counts_data %>%
   mutate(PLN_AREA_N = tolower(PLN_AREA_N))
 
+pop <- read.csv("./Data/day3_pop.csv")
+
+
 # pop <- pop %>%
 #   mutate(PLN_AREA_N = tolower(Number))
 # 
@@ -68,36 +72,55 @@ counts_data <- counts_data %>%
 
 ```
 
+## Join population data from wikipedia
+
+```{r}
+counts_data <- counts_data %>%
+  mutate(PLN_AREA_N = str_to_title(PLN_AREA_N))
+
+joined_data <- counts_data %>%
+  left_join(pop, by = c("PLN_AREA_N" = "Name"))
+
+joined_data <- joined_data %>%
+  mutate(Population = as.numeric(gsub(",", "", Population)))
+
+joined_data <- joined_data %>%
+  mutate(density = counts / Population)
+
+joined_data <- joined_data %>%
+  mutate(density = if_else(Population < 200, NA, density))
+```
+
 # Map
 
 ```{r}
 
-breaks <- classIntervals(counts_data$counts, n = 5, style = "jenks")
-counts_data$group <- cut(counts_data$counts, breaks = breaks$brks, include.lowest = TRUE)
+breaks <- classIntervals(joined_data$density, n = 5, style = "jenks")
+joined_data$group <- cut(joined_data$density, breaks = breaks$brks, include.lowest = TRUE)
 
 library(dplyr)
 
-counts_data <- counts_data %>%
+joined_data <- joined_data %>%
   mutate(band = case_when(
-    group == "[1,18]" ~ "1 to 18",
-    group == "(18,54]" ~ "19 to 54",
-    group == "(54,74]" ~ "55 to 74",
-    group == "(74,110]" ~ "75 to 110",
-    group == "(110,133]" ~ "111 to 133",
+    group == "[0.000389,0.000577]" ~ "1st group (lowest density)",
+    group == "(0.000901,0.00164]" ~ "3rd group",
+    group == "(0.00333,0.0045]" ~ "5th group (highest density)",
+    group == "(0.00164,0.00333]" ~ "4th group",
+    group == "(0.000577,0.000901]" ~ "2nd group",
     TRUE ~ NA_character_  # Fallback for any unmatched groups
   ))
 
-counts_data <- counts_data %>%
-  mutate(band = factor(band, levels = c("1 to 18", "19 to 54", "55 to 74", "75 to 110", "111 to 133")))
+joined_data <- joined_data %>%
+  mutate(band = factor(band, levels = c("1st group (lowest density)", "2nd group", "3rd group", "4th group", "5th group (highest density)")))
 
 plot3 <- ggplot() +
-  geom_sf(data = counts_data, aes(fill = band), color = NA) +  # Fill based on the group
+  geom_sf(data = joined_data, aes(fill = band), color = "white") +  # Fill based on the group
   scale_fill_manual(values = c("#D5D5BC", "#B3B488", "#A59132", "#758448", "#483D03"), 
-                    name = "Number of preschools per \nPlanning Area") +
+                    name = "Density of preschools\n(weighted by population\nin Planning Area)", na.value = "lightgray") +
   theme_minimal(base_family = "Lato") + 
   labs(
-    title = 'The State of Play: Preschool Density Map by Planning Area',
-    subtitle = "An abundance of preschool choices in Bedok, Tampines and Woodlands"
+    title = 'Playful Polygons: Preschool Density Map by Planning Area',
+    subtitle = "The allure of Central Area applies to preschoolers too..."
   ) +
   annotate(
     "text", x = 104.052232, y = 1.2,
