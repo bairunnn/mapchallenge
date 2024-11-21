@@ -1,0 +1,103 @@
+---
+title: "day-23"
+author: "Byron"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(extrafont)
+library(tidygeocoder)
+library(classInt)
+library(purrr)
+library(viridis)
+library(ggtext)
+library(extrafont)
+library(ggimage)
+library(stringr)
+
+options(scipen = 999)
+
+# font_import()  
+# loadfonts()
+
+```
+
+# Data
+
+## Layers
+
+Note that embassies layer is obtained using QuickOSM in QGIS
+
+```{r}
+sea <- st_read("./Data/day-23-assets/sea-23.geojson")
+my <- st_read("./Data/day-23-assets/malaysia-23.geojson")
+sg <- st_read("./Data/sg-outline-1966.geojson")
+lines <- st_read("./Data/day-23-assets/railways-1966-clipped.geojson")
+
+```
+
+Yet another straightforward map, no geoprocessing needed...
+
+## Map
+
+```{r}
+plot23 <- ggplot() +
+  geom_sf(data = sg, fill = "#fdf3d8", color = NA, size = 5) +
+  geom_sf(data = my, fill = "#fdf3d8", color = NA, size = 5) +
+  geom_sf(data = sea, fill = "#ddebde", color = NA, size = 5) +
+  geom_sf(data = lines, color = "#ff564c", size = 2) +  
+  theme_minimal(base_family = "Lora") +  # Set base font to Lora
+  # labs(
+  #   title = 'Heavy rail network in Singapore, 1966',
+  #   subtitle = "Tanjong Pagar - Johor mainline and Jurong branch line"
+  # ) +
+  annotate(
+    "text", x = 103.619, y = 1.217,
+    label = "1 9 6 6",
+    color = "black", size = 4, hjust = 0, vjust = 1,  
+    family = "Lora" 
+  ) +
+  annotate(
+    "text", x = 103.619, y = 1.227,
+    label = "R A I L W A Y S  O F  S I N G A P O R E",
+    color = "black", size = 4, hjust = 0, vjust = 1,  
+    family = "Lora Medium" 
+  ) +
+  annotate(
+    "text", x = 103.619, y = 1.207,
+    label = "3 0  D A Y  M A P  C H A L L E N G E\nD A Y  # 2 3\nM I S S I N G  M E M O R I E S\nD A T A : N A T I O N A L  A R C H I V E S  S I N G A P O R E\nB Y R O N",
+    color = "#7f8181", size = 2, hjust = 0, vjust = 1,  
+    family = "Lora" 
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lora Black"),  # Use Lora Black for the title
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_blank()    
+  )
+
+plot23
+
+```
+
+```{r}
+
+png("23-Byron-Memory.png", width = 3200, height = 2100, res = 300)
+
+# Print the plot to the device
+print(plot23)
+
+# Close the device
+dev.off()
+
+```

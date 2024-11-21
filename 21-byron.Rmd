@@ -1,0 +1,88 @@
+---
+title: "day-21"
+author: "Byron"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(extrafont)
+library(tidygeocoder)
+library(classInt)
+library(purrr)
+library(viridis)
+library(ggtext)
+library(extrafont)
+library(ggimage)
+library(stringr)
+
+options(scipen = 999)
+
+# font_import()  
+# loadfonts()
+
+```
+
+# Data
+
+## Layers
+
+```{r}
+sg <- st_read("./Data/mp2019PAs_new.geojson")
+sg <- st_make_valid(sg)
+```
+
+# Map
+
+```{r}
+plot21 <- ggplot() +
+  geom_sf(data = sg, fill = "#ececec", color = NA) +  # Use fill as a fixed value
+  theme_minimal(base_family = "Lato") + 
+  labs(
+    title = 'Existing and planned high-speed rail lines in Singapore',
+    subtitle = "When bilateral negotiations lead to nowhere..."
+  ) +
+  annotate(
+    "text", x = 104.052232, y = 1.2,
+    label = "30DayMapChallenge\nDay #21\nDisappointing Disagreements\nByron",
+    color = "#7f8181", size = 3, hjust = 1, vjust = 1,
+    family = "Lato"
+  ) +
+  annotate(
+    "text", x = 104.052232, y = 1.25,
+    label = "—\nOrange indicates\nhigh-speed rail line",
+    color = "#ef8d0c", size = 3, hjust = 1, vjust = 1,
+    family = "Lato"
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lato Black"), 
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_blank()
+  )
+
+plot21
+
+```
+
+# PNG
+
+```{r}
+
+png("21-Byron-Conflict.png", width = 3200, height = 2100, res = 300)
+
+# Print the plot to the device
+print(plot21)
+
+# Close the device
+dev.off()
+```

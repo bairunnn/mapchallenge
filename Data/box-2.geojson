@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "box-2",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 103.761363453538536, 1.234963006482212 ], [ 103.761363453538536, 1.375305483536485 ], [ 103.91429659717916, 1.375305483536485 ], [ 103.91429659717916, 1.234963006482212 ], [ 103.761363453538536, 1.234963006482212 ] ] ] } },
+{ "type": "Feature", "properties": { }, "geometry": { "type": "Polygon", "coordinates": [ [ ] ] } }
+]
+}
