@@ -1,0 +1,99 @@
+---
+title: "day-28"
+author: "Byron"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(extrafont)
+library(tidygeocoder)
+library(classInt)
+library(purrr)
+library(viridis)
+library(ggtext)
+library(extrafont)
+library(ggimage)
+library(stringr)
+
+options(scipen = 999)
+
+# font_import()  
+# loadfonts()
+
+```
+
+# Data
+
+## Layers
+
+Note that embassies layer is obtained using QuickOSM in QGIS
+
+```{r}
+sea <- st_read("./Data/day-28-assets/sea-28.geojson")
+sg_land <- st_read("./Data/day-28-assets/sg-land-28.geojson")
+sg_water <- st_read("./Data/day-28-assets/sg-water-28.geojson")
+johor_land <- st_read("./Data/day-28-assets/johor-land-28-clipped.geojson")
+johor_water <- st_read("./Data/day-28-assets/johor-water-28-clipped.geojson")
+
+```
+
+Rather straightforward map, no geoprocessing needed...
+
+## Map
+
+```{r}
+plot28 <- ggplot() +
+  geom_sf(data = sea, fill = "#ded9ca", color = NA, size = 5) +
+  geom_sf(data = sg_water, fill = "#9b8d61", color = NA, size = 5) +
+  geom_sf(data = johor_water, fill = "#ded9ca", color = NA, size = 5) +
+  geom_sf(data = sg_land, fill = "#f4f2ec", color = NA, size = 5) +
+  geom_sf(data = johor_land, fill = "#f4f2ec", color = NA, size = 5) +
+  theme_minimal(base_family = "Lora") +  # Set base font to Lora
+  # labs(
+  #   title = 'Heavy rail network in Singapore, 1966',
+  #   subtitle = "Tanjong Pagar - Johor mainline and Jurong branch line"
+  # ) +
+  annotate(
+    "text", x = 104.125, y = 1.233,
+    label = "R E S E R V O I R S  O F  S I N G A P O R E",
+    color = "black", size = 4, hjust = 1, vjust = 1,  
+    family = "Lora Medium" 
+  ) +
+  annotate(
+    "text", x = 104.125, y = 1.213,
+    label = "3 0  D A Y  M A P  C H A L L E N G E\nD A Y  # 2 8\nR E L I A B L E  R E S E R V O I R S\nD A T A : O P E N S T R E E T M A P S\nB Y R O N",
+    color = "black", size = 2, hjust = 1, vjust = 1,  
+    family = "Lora" 
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", family = "Lora Black"),  # Use Lora Black for the title
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_blank()    
+  )
+
+plot28
+
+```
+
+```{r}
+
+png("28-Byron-Blue.png", width = 3200, height = 2100, res = 300)
+
+# Print the plot to the device
+print(plot28)
+
+# Close the device
+dev.off()
+
+```
